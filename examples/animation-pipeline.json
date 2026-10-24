@@ -1,0 +1,94 @@
+{
+  "schema_version": "0.1",
+  "pipeline_id": "animation-material-mock",
+  "pipeline_version": "1",
+  "status": "design-example-not-executable-yet",
+  "input": {
+    "kind": "synthetic",
+    "recipe": "mock-character-v1",
+    "seed": 42,
+    "frame_count": 120,
+    "width": 64,
+    "height": 64
+  },
+  "runtime_policy": {
+    "profile": "long-running",
+    "heartbeat_interval_seconds": 30,
+    "lease_ttl_seconds": 300,
+    "coordinator_scan_interval_seconds": 5,
+    "attempt_hard_timeout_seconds": null,
+    "task_deadline_seconds": null,
+    "step_soft_warning_seconds": 21600,
+    "task_soft_warning_seconds": 86400
+  },
+  "retry_policy": {
+    "max_attempts_per_recovery_round": 3,
+    "initial_delay_seconds": 10,
+    "max_delay_seconds": 300,
+    "jitter": true
+  },
+  "cache_scope": "single-user-demo",
+  "steps": [
+    {
+      "id": "normalize_asset",
+      "processor": "mock.normalize_asset",
+      "processor_version": "1",
+      "depends_on": [],
+      "resources": { "kind": "cpu", "gpu_count": 0 },
+      "cache_enabled": true,
+      "checkpoint_mode": "none",
+      "outputs": ["normalized_frames", "asset_metadata"]
+    },
+    {
+      "id": "segment_subject",
+      "processor": "mock.segment_subject",
+      "processor_version": "1",
+      "depends_on": ["normalize_asset"],
+      "resources": { "kind": "gpu", "gpu_count": 1, "min_memory_mb": 2048 },
+      "cache_enabled": true,
+      "checkpoint_mode": "none",
+      "outputs": ["subject_masks"]
+    },
+    {
+      "id": "analyze_motion",
+      "processor": "mock.analyze_motion",
+      "processor_version": "1",
+      "depends_on": ["normalize_asset"],
+      "resources": { "kind": "gpu", "gpu_count": 1, "min_memory_mb": 2048 },
+      "cache_enabled": true,
+      "checkpoint_mode": "none",
+      "outputs": ["motion_metadata"]
+    },
+    {
+      "id": "generate_frames",
+      "processor": "mock.generate_frames",
+      "processor_version": "1",
+      "depends_on": ["segment_subject", "analyze_motion"],
+      "resources": { "kind": "gpu", "gpu_count": 1, "min_memory_mb": 4096 },
+      "parameters": { "batch_count": 12, "frames_per_batch": 10, "seed": 42 },
+      "cache_enabled": true,
+      "checkpoint_mode": "committed-batch-manifest",
+      "outputs": ["generated_frames", "batch_checkpoints"]
+    },
+    {
+      "id": "encode_package",
+      "processor": "mock.encode_package",
+      "processor_version": "1",
+      "depends_on": ["generate_frames"],
+      "resources": { "kind": "cpu", "gpu_count": 0 },
+      "cache_enabled": true,
+      "checkpoint_mode": "none",
+      "outputs": ["mock_preview", "animation_package"]
+    },
+    {
+      "id": "publish_result",
+      "processor": "mock.publish_result",
+      "processor_version": "1",
+      "depends_on": ["encode_package"],
+      "resources": { "kind": "cpu", "gpu_count": 0 },
+      "cache_enabled": false,
+      "checkpoint_mode": "none",
+      "outputs": ["task_result_manifest"]
+    }
+  ]
+}

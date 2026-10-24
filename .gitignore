@@ -1,0 +1,42 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Frontend and build outputs
+node_modules/
+dist/
+build/
+coverage/
+
+# Runtime data and scratch
+.runtime/
+data/
+artifacts/
+work/
+logs/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Local editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
