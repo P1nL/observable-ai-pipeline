@@ -808,6 +808,8 @@ class Executor:
             process = psutil.Process(row["pid"])
             if process.create_time() != row["process_created"] or not process.is_running():
                 return "gone", None  # A reused PID is never killed.
+            if process.status() == psutil.STATUS_ZOMBIE:
+                return "gone", None  # Exited; its parent has not reaped it yet.
             return "alive", process
         except psutil.NoSuchProcess:
             return "gone", None

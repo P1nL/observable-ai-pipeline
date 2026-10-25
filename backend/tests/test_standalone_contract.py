@@ -508,6 +508,9 @@ class StandaloneContractTests(unittest.TestCase):
             db.close()
             self.engine = runner.Executor("independent-test", SECRET, self.directory / "artifacts", self.directory / "state")
             final = self.finished(binding)
+            if sys.platform.startswith("linux"):
+                # Recovery must confirm exit without relying on the parent to reap it.
+                self.assertEqual(process.status(), psutil.STATUS_ZOMBIE)
             child.wait(timeout=3)
             self.assertIsNone(final["returncode"])
             self.assertFalse(process.is_running())
