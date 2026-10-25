@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <link rel="icon" href="data:,">
+    <title>AIGC 任务调度与监控平台 · 模拟演示环境</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#queue-panel">跳转到任务队列</a>
+    <div class="app-shell">
+      <main class="workspace" aria-labelledby="monitor-title">
+        <header class="page-header">
+          <div class="page-heading">
+            <div class="product-heading"><h1 id="monitor-title">AIGC 任务调度与监控平台</h1><span class="demo-environment">模拟演示环境</span></div>
+            <p class="simulation-notice">模型推理与算力环境为模拟实现；产品名称用于场景演示，调度状态与运行记录由系统实际生成。</p>
+          </div>
+          <div class="monitor-tools">
+            <span id="connection" class="connection" data-state="idle" role="status" aria-live="polite" aria-atomic="true">连接中</span>
+            <button id="monitor-refresh" type="button" class="button-secondary">刷新</button>
+          </div>
+        </header>
+
+        <div class="overview-bar">
+        <section class="statistics" aria-label="全部数据库任务统计">
+          <div class="stat"><span class="stat-label">全部任务</span><strong id="stat-total" class="stat-value mono">—</strong></div>
+          <div class="stat"><span class="stat-label">进行中</span><strong id="stat-running" class="stat-value mono">—</strong></div>
+          <div class="stat"><span class="stat-label">已完成</span><strong id="stat-succeeded" class="stat-value mono">—</strong></div>
+          <div class="stat"><span class="stat-label">失败</span><strong id="stat-failed" class="stat-value mono">—</strong></div>
+        </section>
+        <details id="resource-panel" class="resource-menu">
+          <summary>
+            <span id="nodes-summary">节点 <strong id="nodes-status">—</strong></span>
+            <span id="resource-warning" class="resource-alert" hidden></span>
+          </summary>
+          <div class="resource-popover">
+            <h2>算力与执行节点</h2>
+            <div id="node-resources" hidden></div>
+            <p class="resource-caption muted">CPU 为并发配额，GPU 为执行槽位，均非物理利用率。</p>
+            <div id="resource-attention"></div>
+            <p id="resource-action-message" class="muted" role="status" aria-live="polite"></p>
+          </div>
+        </details>
+        </div>
+
+        <div class="monitor-layout">
+          <aside id="queue-panel" class="queue-panel" aria-labelledby="queue-title" tabindex="-1">
+            <div class="queue-toolbar">
+              <div class="queue-heading">
+                <h2 id="queue-title">任务队列</h2>
+              </div>
+              <form id="queue-search-form" class="queue-search" role="search" aria-label="搜索任务">
+                <label class="visually-hidden" for="queue-search">任务 ID 或流程</label>
+                <input id="queue-search" name="q" type="search" placeholder="任务 ID 或流程" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false">
+                <button type="submit" class="button-secondary">搜索</button>
+              </form>
+              <div class="queue-filter">
+                <label class="visually-hidden" for="queue-status">任务状态</label>
+                <select id="queue-status" name="status">
+                  <option value="">全部状态</option>
+                  <option value="QUEUED">排队</option>
+                  <option value="RUNNING">进行中</option>
+                  <option value="FAILED">失败</option>
+                  <option value="SUCCEEDED">完成</option>
+                  <option value="CANCELING">取消中</option>
+                  <option value="CANCELED">已取消</option>
+                </select>
+              </div>
+            </div>
+            <div id="queue-message" class="queue-message" role="status" aria-live="polite" aria-atomic="true"></div>
+            <div id="queue-list" class="queue-list" aria-label="任务列表" aria-live="off">
+              <p class="empty queue-loading">正在读取任务队列…</p>
+            </div>
+            <nav class="queue-pagination" aria-label="任务队列分页">
+              <button id="queue-prev" type="button" class="button-secondary" disabled>上一页</button>
+              <span id="queue-page" class="pagination-label mono">—</span>
+              <button id="queue-next" type="button" class="button-secondary" disabled>下一页</button>
+            </nav>
+          </aside>
+
+          <section id="detail-panel" class="detail-workspace" aria-labelledby="task-title" tabindex="-1">
+      <div id="page-message" class="page-message empty" role="status" aria-live="polite" aria-atomic="true">请选择任务</div>
+      <noscript><p class="error">此页面需要 JavaScript 才能查询任务。请启用 JavaScript 后重新打开页面。</p></noscript>
+
+      <div id="task-content" aria-labelledby="task-title" hidden>
+        <section class="task-overview" aria-label="任务概况">
+          <div class="overview-heading">
+            <div class="task-state">
+              <h2 id="task-title">执行详情</h2>
+              <span id="task-status"><span class="status">未读取</span></span>
+            </div>
+            <div class="task-actions">
+              <button id="cancel-button" type="button" class="button-cancel" hidden>取消任务</button>
+              <button id="resume-button" type="button" class="button-primary" hidden>恢复任务</button>
+            </div>
+          </div>
+          <p id="task-steps-summary" class="field-help" hidden></p>
+          <p id="task-phase" class="task-phase"></p>
+          <section id="task-brief" class="task-brief" aria-label="输入素材与生成配置"></section>
+          <details id="task-metadata" class="task-metadata">
+          <summary>任务信息</summary>
+          <dl class="task-identity">
+            <div class="detail-pair">
+              <dt>任务 ID</dt>
+              <dd id="task-id" class="mono">—</dd>
+            </div>
+          </dl>
+          <dl class="task-facts">
+            <div class="detail-pair">
+              <dt>提交时间</dt>
+              <dd id="task-created">—</dd>
+            </div>
+            <div class="detail-pair">
+              <dt>结束时间</dt>
+              <dd id="task-finished">—</dd>
+            </div>
+            <div class="detail-pair">
+              <dt>总耗时（含排队）</dt>
+              <dd id="task-duration">—</dd>
+            </div>
+            <div class="detail-pair">
+              <dt>恢复轮次</dt>
+              <dd id="task-round">—</dd>
+            </div>
+            <div class="detail-pair">
+              <dt>执行时限策略</dt>
+              <dd id="task-policy">—</dd>
+            </div>
+          </dl>
+          </details>
+          <p id="cancel-note" class="field-help" hidden>等待进程退出与资源清理</p>
+          <div id="action-message" class="action-message" role="status" aria-live="polite" aria-atomic="true"></div>
+        </section>
+
+        <div class="detail-tabs" role="tablist" aria-label="任务详情">
+          <button id="tab-flow" type="button" role="tab" data-detail-tab="flow" aria-controls="panel-flow" aria-selected="true" tabindex="0">生成工作流</button>
+          <button id="tab-attempts" type="button" role="tab" data-detail-tab="attempts" aria-controls="panel-attempts" aria-selected="false" tabindex="-1">执行记录</button>
+          <button id="tab-events" type="button" role="tab" data-detail-tab="events" aria-controls="panel-events" aria-selected="false" tabindex="-1">任务事件</button>
+          <button id="tab-artifacts" type="button" role="tab" data-detail-tab="artifacts" aria-controls="panel-artifacts" aria-selected="false" tabindex="-1">生成结果与资产</button>
+        </div>
+
+          <section id="panel-flow" class="detail-panel flow-section" role="tabpanel" aria-labelledby="tab-flow" tabindex="0">
+            <div id="flow-canvas" class="flow-canvas" role="region" aria-label="任务依赖图" tabindex="0">
+              <svg id="workflow-edges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"></svg>
+              <ol id="steps" class="steps">
+                <li class="empty">暂无步骤记录。</li>
+              </ol>
+            </div>
+            <section id="step-inspector" class="step-inspector" aria-label="所选步骤详情" hidden></section>
+          </section>
+
+          <section id="panel-artifacts" class="detail-panel artifacts-panel" role="tabpanel" aria-labelledby="tab-artifacts" tabindex="0" hidden>
+            <section class="result-section" aria-labelledby="result-title">
+              <h3 id="result-title">生成结果</h3>
+              <div id="result"><p class="empty">暂无生成结果。</p></div>
+            </section>
+            <section class="artifacts-section" aria-labelledby="artifacts-title">
+              <h3 id="artifacts-title">工作流资产</h3>
+              <details data-detail="artifact-catalog">
+                <summary id="artifact-summary">查看输出文件与恢复检查点</summary>
+                <ul id="artifacts" class="artifacts">
+                  <li class="empty">暂无已提交资产。</li>
+                </ul>
+              </details>
+            </section>
+          </section>
+
+        <section id="panel-attempts" class="detail-panel history-section" role="tabpanel" aria-labelledby="tab-attempts" tabindex="0" hidden>
+          <div class="section-heading">
+            <p id="attempts-cache-note" class="muted" hidden></p>
+          </div>
+          <div class="table-scroll" role="region" aria-label="执行记录" tabindex="0">
+            <table class="attempt-table">
+              <caption class="visually-hidden">任务的执行次数、代次、时间与资源回收记录</caption>
+              <thead>
+                <tr>
+                  <th scope="col">步骤</th>
+                  <th scope="col">执行次数 / 代次</th>
+                  <th scope="col">状态</th>
+                  <th scope="col">节点 / 资源 / Worker</th>
+                  <th scope="col">执行时间 / 心跳</th>
+                  <th scope="col">恢复与清理</th>
+                </tr>
+              </thead>
+              <tbody id="attempts">
+                <tr><td colspan="6" class="empty">暂无执行记录</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-events" class="detail-panel events-section" role="tabpanel" aria-labelledby="tab-events" tabindex="0" hidden>
+          <ol id="events" class="events">
+            <li class="empty">暂无事件记录。</li>
+          </ol>
+        </section>
+      </div>
+          </section>
+        </div>
+
+      </main>
+    </div>
+  </body>
+</html>

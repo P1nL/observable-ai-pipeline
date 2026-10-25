@@ -1,0 +1,24 @@
+[
+  {
+    "node_id": "node-a",
+    "executor_id": "executor-a",
+    "url": "http://127.0.0.1:8091",
+    "secret_env": "NODE_A_SECRET",
+    "accepting": true,
+    "cpu_capacity": 2,
+    "mock_gpu_slots": ["gpu-0", "gpu-1"],
+    "processors": {"mock": ["1"], "mock-step": ["1"]},
+    "storage_id": "pipeline-artifacts"
+  },
+  {
+    "node_id": "node-b",
+    "executor_id": "executor-b",
+    "url": "http://127.0.0.1:8092",
+    "secret_env": "NODE_B_SECRET",
+    "accepting": true,
+    "cpu_capacity": 2,
+    "mock_gpu_slots": ["gpu-0", "gpu-1"],
+    "processors": {"mock": ["independent-mock-v1"], "mock-step": ["independent-mock-v1"]},
+    "storage_id": "pipeline-artifacts"
+  }
+]

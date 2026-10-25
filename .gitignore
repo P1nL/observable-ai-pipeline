@@ -26,6 +26,7 @@ coverage/
 
 # Runtime data and scratch
 .runtime/
+.playwright-mcp/
 data/
 artifacts/
 work/

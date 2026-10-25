@@ -1,0 +1,25 @@
+name: backend
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15@sha256:9b1d34adbce1dd07ee6e94b4a2cf698884b89bd44a6c9c12f5da8f3acbfe4957
+        env:
+          POSTGRES_USER: pipeline
+          POSTGRES_PASSWORD: pipeline
+          POSTGRES_DB: pipeline_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pipeline -d pipeline_test"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.15"
+      - run: uv sync --locked
+      - run: uv run --locked pytest -q
+        env:
+          TEST_DATABASE_URL: postgresql://pipeline:pipeline@127.0.0.1:5432/pipeline_test

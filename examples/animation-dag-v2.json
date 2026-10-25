@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.2",
+  "pipeline_id": "animation-dag-v2",
+  "pipeline_version": "2",
+  "input": {"kind": "synthetic", "seed": 42},
+  "cache_enabled": true,
+  "bypass_cache": false,
+  "generation_tag": "",
+  "runtime_policy": {"heartbeat_interval_seconds": 30, "lease_ttl_seconds": 300, "attempt_hard_timeout_seconds": null, "task_deadline_seconds": null},
+  "resource_policy": {"cpu_max_concurrency": 2, "mock_gpu_slots": 1},
+  "steps": [
+    {"id": "normalize_asset", "processor": "mock", "processor_version": "1", "resource_kind": "cpu", "depends_on": [], "checkpoint_mode": "none"},
+    {"id": "segment_subject", "processor": "mock", "processor_version": "1", "resource_kind": "cpu", "depends_on": ["normalize_asset"], "checkpoint_mode": "none", "parameters": {"duration_seconds": 0.5}},
+    {"id": "analyze_motion", "processor": "mock", "processor_version": "1", "resource_kind": "cpu", "depends_on": ["normalize_asset"], "checkpoint_mode": "none", "parameters": {"duration_seconds": 0.5}},
+    {"id": "generate_frames", "processor": "mock", "processor_version": "1", "resource_kind": "mock-gpu", "depends_on": ["segment_subject", "analyze_motion"], "checkpoint_mode": "committed-batch-manifest", "parameters": {"batch_count": 6, "frames_per_batch": 8, "batch_duration_seconds": 0.2}},
+    {"id": "encode_package", "processor": "mock", "processor_version": "1", "resource_kind": "cpu", "depends_on": ["generate_frames"], "checkpoint_mode": "none"},
+    {"id": "publish_result", "processor": "mock", "processor_version": "1", "resource_kind": "cpu", "depends_on": ["encode_package"], "checkpoint_mode": "none", "cache_enabled": false}
+  ]
+}
