@@ -1,11 +1,12 @@
 """Business registration is durable intent, not an execution grant or completion."""
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 import json
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -43,6 +44,35 @@ def finish(engine, task_id, tail):
     response = engine.client.post(f"/api/v1/tasks/{task_id}/finish", json={"last_step": tail}, headers={"Idempotency-Key": "finish"})
     assert response.status_code == 200, response.text
     return response.json()
+
+
+def test_task_detail_keeps_one_snapshot_while_worker_finishes(managed, monkeypatch):
+    engine = managed
+    task_id = create(engine)
+    register(engine, task_id, "snapshot-step", parameters={"batch_count": 2, "batch_duration_seconds": .05})
+
+    @contextmanager
+    def interleaved_connect(settings):
+        with connect(settings) as conn:
+            def execute(query, *args, **kwargs):
+                if query.startswith("SELECT s.*"):
+                    # Commit real completion between the task and step SELECTs.
+                    engine.worker("snapshot-worker")
+                    engine.wait(task_id, lambda t: t["phase"] == "WAITING_STEPS"
+                                and step(t, "snapshot-step")["status"] == "SUCCEEDED")
+                return conn.execute(query, *args, **kwargs)
+            yield SimpleNamespace(execute=execute)
+
+    with monkeypatch.context() as patch:
+        patch.setattr("app.repository.connect", interleaved_connect)
+        snapshot = engine.repo.get_task(task_id)
+
+    assert snapshot["status"] == "QUEUED" and snapshot["phase"] == "QUEUED"
+    assert step(snapshot, "snapshot-step")["status"] == "READY"
+    latest = engine.task(task_id)
+    assert latest["status"] == "RUNNING" and latest["phase"] == "WAITING_STEPS"
+    assert step(latest, "snapshot-step")["status"] == "SUCCEEDED"
+    assert not latest["registration_closed"]
 
 
 @pytest.mark.parametrize("managed", ["local", "builtin", "standalone"], indirect=True)

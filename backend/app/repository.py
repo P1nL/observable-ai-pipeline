@@ -168,6 +168,7 @@ class Repository:
 
     def get_task(self, task_id):
         with connect(self.settings) as conn:
+            conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
             task = conn.execute("SELECT * FROM tasks WHERE id=%s", (task_id,)).fetchone()
             if not task:
                 raise DomainError("NOT_FOUND", "Task not found", 404)

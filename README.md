@@ -6,6 +6,7 @@
 
 ## 仓库结构
 
+[项目架构图](.archify\architecture-observable-ai-pipeline-20261026-165458\observable-ai-pipeline.html)
 ```text
 backend/
 ├─ app/          后台服务、任务执行与恢复逻辑

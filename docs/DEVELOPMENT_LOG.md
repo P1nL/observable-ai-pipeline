@@ -437,3 +437,11 @@
 - 输出保存在 `.archify/architecture-observable-ai-pipeline-20261026-165458/`，包含 candidate.json 和 observable-ai-pipeline.html。自动结构、源码、产物和浏览器检查均通过；首次未找到 Chrome，随后使用本机 Edge 的 Chromium 引擎完成同一检查，未安装浏览器或修改工具实现。
 - 保留所有节点、关系和源码证据，仅调整两个节点位置，已处理的交叉由 3 处降至 2 处，不再追加布局迭代。查看了 1440×900 浅色与 2048×1320 深色截图，节点和关系标签可见；截图及其他自动视口结果保留在图表目录。此为图表验证，不替代业务运行验收。
 - 未修改业务代码、数据库或运行服务，未提交或推送。工具提示有 3.2.0 更新，未自动安装。
+
+## 2026-10-27：远端 CI 任务详情并发快照修复
+
+- GitHub Actions backend 运行 40471959109（提交 f0e693a）为 215 passed、6 skipped、1 failed；失败为 test_business_reads_history_then_extends_real_sequential_work[standalone]，同一响应内步骤均已 SUCCEEDED，但任务阶段仍为 EXECUTING 而非 WAITING_STEPS。上次 zombie 修复提交 7737010 对应运行 40209596849 已成功，本次是另一问题。
+- 根因：get_task 在默认 READ COMMITTED 事务中先读 Task、再读 Step/最近 Attempt；Worker 在两次查询间提交完成状态时，详情可能混合旧任务与新步骤。新增可控并发回归，在真实任务行读取后启动真实 Worker，等待其完成提交后才查询步骤；修复前稳定得到旧任务 QUEUED 与新步骤 SUCCEEDED，1 failed（3.52s）。未伪造执行状态或使用固定 sleep 碰运气。
+- 最小修复是在 get_task 的查询前设置 REPEATABLE READ / READ ONLY；沿用已有监控查询方式，单次响应保持同一快照，后续请求仍可读到新提交，不驱动执行、不改状态机、不改变 API 结构。SPEC 补充单次详情快照语义；原失败断言未放宽，未增加重试或延长超时。
+- 修复后 backend/tests/test_managed.py 在 Windows 为 12 passed（73.42s），Linux 为 12 passed（55.33s）。包含新增混读回归、local/builtin/standalone 三种后端的真实动态追加/显式关闭流程，以及既有幂等、检查点恢复、能力检查授权隔离等相关场景。Linux 使用 Python 3.12.10、uv 0.11.15 和 uv sync --locked；未重跑无关全套、A12、浏览器或真实跨机/GPU 验收，未宣称远端 CI 已重新通过。
+- 测试使用本次独立临时 PostgreSQL 容器中的 pipeline_test，每例仍使用随机 schema；未接触其他项目数据库或重启开发服务。保留开始时已有 README 未提交修改；未改工作流/依赖/迁移，未提交或推送。Token 与个人工时未知。

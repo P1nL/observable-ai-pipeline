@@ -178,6 +178,8 @@ MVP 只有单用户/单作用域，不建设多租户或跨用户复用机制。
 
 状态变更与事件同事务提交。锁定 Task 行分配任务内 seq，防止游标读取越过未提交事件。选中任务约 2 秒轮询，全局监控约 3 秒轮询，不依赖 WebSocket 在线状态；重新连接从数据库恢复。
 
+`GET /tasks/{id}` 使用 PostgreSQL REPEATABLE READ / READ ONLY 事务，在同一数据库快照中读取 Task、Step 和最近 Attempt 的节点/设备关联，避免并发完成或登记时混合新旧状态。查询不推进执行、不创建 Attempt/事件，也不阻塞等待任务完成；后续请求可观察新提交，不承诺多个 HTTP 请求间的原子快照。
+
 `GET /monitor` 使用 PostgreSQL REPEATABLE READ / READ ONLY 事务生成单次一致读模型，不推进任务、不创建 Attempt/事件。status 为 Task 状态；q 为 UUID 或流程标识的大小写不敏感字面子串（最多 64 字符）；limit 默认 20、范围 1–100，offset 非负。前端每页 10 条；全库 counts / total / waiting 不随筛选变化，filtered_total 与 items 应用相同过滤，按创建时间和 ID 降序。completed_steps 含 SUCCEEDED/CACHED，attempt_count 只统计真实 Attempt，heartbeat_at 只取 RUNNING Attempt。unconfirmed_count 为未确认物理退出的 CPU_PROCESS_UNCONFIRMED / QUARANTINED 数量，unconfirmed_executors 最多列最近 5 条，不代表进程仍在运行。observed_at 是数据库观测时间；分页请求、任务详情及独立资源查询之间不承诺同一原子快照。原 GET /tasks 返回结构不变。
 
 提醒知悉（008 增量）：`monitor_acknowledgements` 只保存 Attempt 对应的知悉时间和当时的 status / resource_cleanup_state / stop_requested_at。`POST /api/v1/monitor/attempts/{attempt_id}/acknowledgement` 请求体必须携带这三个观察字段；锁定该 Attempt 校验仍未确认退出、仍属待核实状态且观察一致，过期请求返回 409 / MONITOR_CONDITION_CHANGED。相同条件重复请求保留原知悉时间；不存在的 Attempt 返回 404。`DELETE` 同路径幂等移除知悉标记、恢复提醒。两者都不更新 Task、Step、Attempt、槽位、退出证明或执行事件，也不调用执行器。此本地监控功能不引入账号系统或身份审计。
