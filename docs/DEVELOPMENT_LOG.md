@@ -445,3 +445,8 @@
 - 最小修复是在 get_task 的查询前设置 REPEATABLE READ / READ ONLY；沿用已有监控查询方式，单次响应保持同一快照，后续请求仍可读到新提交，不驱动执行、不改状态机、不改变 API 结构。SPEC 补充单次详情快照语义；原失败断言未放宽，未增加重试或延长超时。
 - 修复后 backend/tests/test_managed.py 在 Windows 为 12 passed（73.42s），Linux 为 12 passed（55.33s）。包含新增混读回归、local/builtin/standalone 三种后端的真实动态追加/显式关闭流程，以及既有幂等、检查点恢复、能力检查授权隔离等相关场景。Linux 使用 Python 3.12.10、uv 0.11.15 和 uv sync --locked；未重跑无关全套、A12、浏览器或真实跨机/GPU 验收，未宣称远端 CI 已重新通过。
 - 测试使用本次独立临时 PostgreSQL 容器中的 pipeline_test，每例仍使用随机 schema；未接触其他项目数据库或重启开发服务。保留开始时已有 README 未提交修改；未改工作流/依赖/迁移，未提交或推送。Token 与个人工时未知。
+
+### 同日修正 README 架构图链接
+
+- 目标 HTML 文件本地存在且已被 Git 跟踪；远端 README 渲染结果将 Windows 反斜杠编码为 %5C，链接没有指向实际目录。将 README 链接中的目录分隔符改为正斜杠，不移动或重新生成架构图。
+- 仅修正文档，核对目标跟踪路径并执行 diff --check；不重跑业务测试，不部署在线预览，未提交或推送。
