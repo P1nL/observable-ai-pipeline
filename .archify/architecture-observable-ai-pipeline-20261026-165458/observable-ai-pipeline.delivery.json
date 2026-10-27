@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7286c98a-e36f-43aa-bd8f-dd1a16acb2c6",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "D:\\works\\observable-ai-pipeline\\.archify\\architecture-observable-ai-pipeline-20261026-165458\\candidate.json",
+  "output": "D:\\works\\observable-ai-pipeline\\.archify\\architecture-observable-ai-pipeline-20261026-165458\\observable-ai-pipeline.html",
+  "specification": {
+    "sha256": "384d715d05a6fae929969f30cbae7a1a9de7d88c0f6f0ca781b09c56946da574",
+    "bytes": 13957
+  },
+  "artifact": {
+    "sha256": "8f48409ab80f63439f592a99e79bef49e8c2ebf96063cc2eac13ad446f49cc0b",
+    "bytes": 855840
+  }
+}

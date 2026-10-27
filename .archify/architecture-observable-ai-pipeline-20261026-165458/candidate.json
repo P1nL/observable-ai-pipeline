@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AI 任务管线：执行、恢复与数据架构",
+    "locale": "zh-CN",
+    "output": ".archify/architecture-observable-ai-pipeline-20261026-165458/observable-ai-pipeline.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/P1nL/observable-ai-pipeline.git",
+      "revision": "7737010547b6514ca7ce6e0125e5c77a05943cee",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "business", "type": "external", "label": "上游业务程序",
+      "sublabel": "提交任务 / 登记顺序步骤", "tag": "相同请求复用提交键",
+      "pos": [40, 40], "size": [170, 80],
+      "sources": [{"path": "examples/business_sequence.py", "line": 20, "end_line": 85}]
+    },
+    {
+      "id": "api", "type": "backend", "label": "FastAPI 接入服务",
+      "sublabel": "任务接口 / 静态页面 / 文件", "tag": "请求不等待计算完成",
+      "pos": [350, 40], "size": [190, 80],
+      "sources": [
+        {"path": "backend/app/api.py", "line": 16, "end_line": 146},
+        {"path": "backend/app/inputs.py", "line": 43, "end_line": 94}
+      ]
+    },
+    {
+      "id": "authority", "type": "backend", "label": "状态与提交控制",
+      "sublabel": "Repository：当前执行权校验", "tag": "API / Worker 共用库",
+      "pos": [675, 40], "size": [200, 80],
+      "sources": [
+        {"path": "backend/app/repository.py", "line": 66, "end_line": 167},
+        {"path": "backend/app/repository.py", "line": 426, "end_line": 624},
+        {"path": "backend/app/repository.py", "line": 987, "end_line": 1088}
+      ]
+    },
+    {
+      "id": "postgres", "type": "database", "label": "PostgreSQL",
+      "sublabel": "任务 / 历史 / 资源 / 缓存", "tag": "中央权威状态",
+      "pos": [1010, 40], "size": [170, 80],
+      "sources": [
+        {"path": "backend/migrations/001_execution.sql", "line": 1, "end_line": 93},
+        {"path": "backend/migrations/007_execution_nodes.sql", "line": 1, "end_line": 42},
+        {"path": "backend/app/repository.py", "line": 669, "end_line": 829}
+      ]
+    },
+    {
+      "id": "monitor", "type": "frontend", "label": "浏览器监控台",
+      "sublabel": "队列 / 步骤 / 历史 / 结果", "tag": "无上传或新建表单",
+      "pos": [40, 260], "size": [170, 80],
+      "sources": [
+        {"path": "backend/app/web/app.js", "line": 281, "end_line": 363},
+        {"path": "backend/app/api.py", "line": 60, "end_line": 110},
+        {"path": "backend/app/repository.py", "line": 184, "end_line": 235}
+      ]
+    },
+    {
+      "id": "files", "type": "database", "label": "持久化文件卷",
+      "sublabel": "输入 / 已存批次 / JSON / GIF", "tag": "候选文件不等于已提交",
+      "pos": [350, 520], "size": [190, 100],
+      "sources": [
+        {"path": "backend/app/artifacts.py", "line": 65, "end_line": 142},
+        {"path": "backend/app/inputs.py", "line": 43, "end_line": 57},
+        {"path": "backend/app/external_service.py", "line": 303, "end_line": 319}
+      ]
+    },
+    {
+      "id": "supervisor", "type": "backend", "label": "Worker / Supervisor",
+      "sublabel": "领取步骤 / 独立续租 / 监督", "tag": "一次监督一个 Attempt",
+      "pos": [675, 260], "size": [200, 100],
+      "sources": [
+        {"path": "backend/app/worker.py", "line": 181, "end_line": 339},
+        {"path": "backend/app/backends.py", "line": 54, "end_line": 215},
+        {"path": "backend/app/domain.py", "line": 119, "end_line": 126}
+      ]
+    },
+    {
+      "id": "maintenance", "type": "backend", "label": "恢复与节点观察",
+      "sublabel": "Worker 内的后台线程", "tag": "扫描不是续租",
+      "pos": [1010, 260], "size": [170, 90],
+      "sources": [
+        {"path": "backend/app/worker.py", "line": 306, "end_line": 339},
+        {"path": "backend/app/repository.py", "line": 291, "end_line": 316},
+        {"path": "backend/app/repository.py", "line": 715, "end_line": 784}
+      ]
+    },
+    {
+      "id": "local-compute", "type": "backend", "label": "本地计算子进程",
+      "sublabel": "app.executor · CPU MOCK", "tag": "没有中央数据库凭据",
+      "pos": [350, 260], "size": [190, 90],
+      "sources": [
+        {"path": "backend/app/backends.py", "line": 54, "end_line": 75},
+        {"path": "backend/app/executor.py", "line": 56, "end_line": 169},
+        {"path": "backend/app/executor.py", "line": 170, "end_line": 249}
+      ]
+    },
+    {
+      "id": "external-service", "type": "backend", "label": "外部执行服务",
+      "sublabel": "命令鉴权 / 幂等启动 / 看护", "tag": "可选 · 预配置节点",
+      "pos": [675, 520], "size": [200, 90],
+      "sources": [
+        {"path": "backend/app/external_service.py", "line": 233, "end_line": 355},
+        {"path": "backend/app/external_service.py", "line": 479, "end_line": 523},
+        {"path": "executors/standalone_mock.py", "line": 676, "end_line": 747}
+      ]
+    },
+    {
+      "id": "node-store", "type": "database", "label": "每节点 SQLite",
+      "sublabel": "命令 / 事件 / 进程身份", "tag": "独立 state_id",
+      "pos": [1010, 520], "size": [170, 90],
+      "sources": [
+        {"path": "backend/app/external_service.py", "line": 138, "end_line": 182},
+        {"path": "backend/app/external_service.py", "line": 233, "end_line": 274},
+        {"path": "backend/app/external_service.py", "line": 419, "end_line": 451}
+      ]
+    },
+    {
+      "id": "remote-compute", "type": "backend", "label": "节点计算子进程",
+      "sublabel": "预装 MOCK · 非任意代码", "tag": "本身不写中央状态",
+      "pos": [675, 770], "size": [200, 90],
+      "sources": [
+        {"path": "backend/app/executor.py", "line": 170, "end_line": 249},
+        {"path": "executors/standalone_mock.py", "line": 355, "end_line": 459},
+        {"path": "executors/standalone_mock.py", "line": 1, "end_line": 35}
+      ]
+    }
+  ],
+  "boundaries": [
+    {"kind": "region", "label": "可选执行节点：每个节点保留自己的服务、身份与状态库", "wraps": ["external-service", "node-store", "remote-compute"], "pad": 20}
+  ],
+  "connections": [
+    {"id": "submit", "from": "business", "to": "api", "label": "HTTP 提交/登记", "variant": "emphasis"},
+    {"id": "observe", "from": "monitor", "to": "api", "label": "查询 / 管理"},
+    {"id": "api-state", "from": "api", "to": "authority", "label": "进程内调用", "variant": "emphasis"},
+    {"id": "state-db", "from": "authority", "to": "postgres", "label": "SQL 事务", "variant": "emphasis"},
+    {"id": "api-file", "from": "api", "to": "files", "label": "上传 / 下载"},
+    {"id": "validate-files", "from": "authority", "to": "files", "label": "校验文件与引用"},
+    {"id": "execution-authority", "from": "supervisor", "to": "authority", "label": "领取 / 续租 / 提交", "variant": "emphasis"},
+    {"id": "maintenance-start", "from": "supervisor", "to": "maintenance", "label": "启动后台线程"},
+    {"id": "maintenance-state", "from": "maintenance", "to": "authority", "label": "过期检查 / 对账"},
+    {"id": "node-inspection", "from": "maintenance", "to": "external-service", "label": "探测 / 退出核实"},
+    {"id": "local-dispatch", "from": "supervisor", "to": "local-compute", "label": "local 默认启动", "variant": "emphasis"},
+    {"id": "local-events", "from": "local-compute", "to": "supervisor", "label": "stdout 候选事件", "variant": "dashed"},
+    {"id": "local-artifacts", "from": "local-compute", "to": "files", "label": "读取 / 写出候选"},
+    {"id": "remote-dispatch", "from": "supervisor", "to": "external-service", "label": "external 校验后授权", "variant": "security"},
+    {"id": "remote-events", "from": "external-service", "to": "supervisor", "label": "事件 / 退出回执", "variant": "dashed"},
+    {"id": "node-persistence", "from": "external-service", "to": "node-store", "label": "启动前先保存"},
+    {"id": "node-launch", "from": "external-service", "to": "remote-compute", "label": "身份登记后启动"},
+    {"id": "node-output", "from": "remote-compute", "to": "external-service", "label": "stdout / 真实退出", "variant": "dashed"},
+    {"id": "remote-artifacts", "from": "remote-compute", "to": "files", "label": "共享卷读写"},
+    {"id": "shared-reference-check", "from": "external-service", "to": "files", "label": "实际读取共享引用"}
+  ],
+  "cards": [
+    {"dot": "cyan", "title": "如何读图：模块不等于额外服务", "items": [
+      "这是当前实现的逻辑与执行架构，不是已经部署多台机器的证明。状态与提交控制是 API、Worker 共用的进程内代码，并非新建的微服务。",
+      "最小运行只需 PostgreSQL、API 和 Worker；恢复检查在 Worker 后台线程内，无需单独启动 coordinator。浏览器关闭不终止计算。",
+      "实线表示调用或数据访问，虚线表示计算产生的异步事件；事件仍须中央确认后才成为任务事实。"
+    ]},
+    {"dot": "emerald", "title": "任务定义：固定动画图与动态顺序托管", "items": [
+      "默认 animation-dag-v2：整理素材 → 主体分割 / 动作分析 → 帧生成 → 编码打包 → 结果清单；帧生成必须等两个分支成功。两个 Worker 才能实际并行监督分支。",
+      "managed-v1 由业务端通过 key / after_step 逐步登记顺序步骤；中心验证和保存后才授权执行。当前已登记工作全部成功，也必须显式 finish 才可结束整个任务。",
+      "历史三步保留冻结配置和恢复能力，拒绝新键创建；不接收任意程序路径、插件或动态并行图。步骤定义见 backend/app/domain.py:330–365，登记与关闭见 repository.py:117–167。"
+    ]},
+    {"dot": "violet", "title": "提交边界：文件存在并不代表成功", "items": [
+      "计算先在 Task / Step / Attempt 独立路径写出不可覆盖的文件，再发送进度、检查点或结果候选；计算进程没有直接写中央数据库的权限。",
+      "中央验证当前 Attempt、generation、有效租约、节点与设备绑定，再校验文件内容及引用；事务提交前再次检查租约。旧计算迟到写回不能覆盖新执行。",
+      "成功提交、进程退出、资源归还分别判断。外部执行必须有可信的退出回执；收到 HTTP 成功或停止请求不等于任务已经成功或进程已经退出。"
+    ]},
+    {"dot": "amber", "title": "长任务与恢复：存活、进度、时限分开", "items": [
+      "默认每 30 秒心跳、300 秒可续租；步骤硬时限和任务截止默认关闭。静默计算可以继续，但计算已经退出后不能只靠看护线程无限续租。",
+      "临时失败有限重试并等待退避；重试和接管新增 Attempt，保留历史。恢复复用成功步骤及已提交、兼容、可读取的批次，不接纳未提交候选。",
+      "数据库不可用时 API 返回 503、不新领取；租约内可恢复原执行，过期则停止旧计算并等待接管。所有 Worker 都停止时无人推进，重启后才恢复扫描。"
+    ]},
+    {"dot": "rose", "title": "设备安全：失去租约不代表设备空闲", "items": [
+      "中心在同一领取事务中检查依赖、CPU 预算及模拟 GPU 占用；无可用资源时保持等待，不创建虚假 Attempt。每个预配置节点有独立 CPU 配额与多个模拟设备。",
+      "过期先记 LOST，并隔离不确定的资源。核实本机主机 / PID / 创建时间，或验证外部原节点与状态库的退出回执后，才清理原 owner。",
+      "错误节点、旧代次回执和替换后的空状态库不能释放旧资源，更不能释放新 owner。提醒的“确认知悉”仅改变展示，不解除实际隔离。"
+    ]},
+    {"dot": "orange", "title": "外部节点：控制仍在中央", "items": [
+      "派发前检查处理器版本、能力、节点接单状态、真实共享引用和预算；通过后才保存不可变命令并发放绑定 Task / Step / Attempt / 节点 / 设备的授权。",
+      "通过认证 HTTP 协议操作；非回环节点必须校验证书和主机名的 HTTPS。各端共享同一真实文件空间，不会自动复制文件，也不自动发现节点。",
+      "每个节点独立 SQLite 保存命令、事件序号、进程身份与 state_id；相同命令重投递不再启动。启动意图已保存但进程身份未知时保持不确定，不猜测为从未启动。"
+    ]},
+    {"dot": "slate", "title": "结果复用与可观察性", "items": [
+      "同任务保留成功步骤；跨任务缓存须显式开启，并匹配输入与上游字节、处理器版本、参数、seed 和 generation_tag。只有成功任务可发布缓存，publish_result 始终独立提交。",
+      "Task、Step、Attempt、事件、检查点引用、缓存来源与资源 owner 持久化。缓存命中为 CACHED，不伪造一次计算。",
+      "浏览器展示全库计数、筛选分页、依赖、执行历史、结果和资源异常；查询不触发计算。断连保留上次数据并提示过期，恢复与取消需要显式操作。"
+    ]},
+    {"dot": "cyan", "title": "真实能力与未验收边界", "items": [
+      "全部模型和设备计算仍为 CPU MOCK。配套 app.external_service 可运行图片/GIF 路径；独立 standalone_mock 不导入中心模块，只提供合成 JSON。图中两者合并为同一可替换协议角色。",
+      "输入文件、GIF、数据库、进程、检查点和协议请求真实；模拟 GPU 预算不等于真实硬件利用率、显存或温度。",
+      "图不宣称真实跨机部署、小时级运行或 GPU 驱动清理已验收；不提供任意模型内部续跑、恰好一次计算、通用调度平台或公开账号系统。"
+    ]}
+  ]
+}
